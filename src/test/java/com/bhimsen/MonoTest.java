@@ -99,9 +99,50 @@ public class MonoTest {
                 // .doOnNext(s -> log.info("value is here. Executing doOnNext {}", s)) // after request(unbounded) and onNext(Rajat Garg)
                 .flatMap(s -> Mono.empty())
                 .doOnNext(s -> log.info("value is here. Executing doOnNext {}", s)) // after request(unbounded) and onNext(Rajat Garg)
-                .doOnSuccess(s -> log.info("doOnSuccess executed {}" , s));
+                .doOnSuccess(s -> log.info("doOnSuccess executed {}", s));
         mono.subscribe(s -> log.info("name {}", s),
                 Throwable::printStackTrace,
                 () -> log.info("Finished"));
+    }
+
+    @Test
+    public void monoDoOnError() {
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception!!!!!"))
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .doOnNext(s -> log.info("executing this doOnNext"));     // will not execute bcz getting error
+
+        StepVerifier.create(error).expectError(IllegalArgumentException.class).verify();
+    }
+
+    // we can return only mono
+    @Test
+    public void monoDoOnErrorResume() {
+        int a = 20;
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception!!!!!"))
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .onErrorResume(s -> {                                               // will execute even getting error
+                    log.info("Inside onErrorResume");
+                    System.out.println(a + 50 + " value");
+                    return Mono.just("Bhimsen G");   // will return the Mono
+                });
+
+        StepVerifier.create(error).expectNext("Bhimsen G").verifyComplete();
+    }
+
+    // we can return any , not only mono
+    @Test
+    public void monoDoOnErrorReturn() {
+        int a = 20;
+        Mono<Object> error = Mono.error(new IllegalArgumentException("Illegal argument exception!!!!!"))
+                .doOnError(e -> MonoTest.log.error("Error message: {}", e.getMessage()))
+                .onErrorReturn("empty")
+                .onErrorResume(s -> {                                               // now it will be ignored
+                    log.info("Inside onErrorResume");
+                    System.out.println(a + 50 + " value");
+                    return Mono.just("Bhimsen G");
+                });
+//                .onErrorReturn("empty");
+
+        StepVerifier.create(error).expectNext("empty").verifyComplete();
     }
 }
