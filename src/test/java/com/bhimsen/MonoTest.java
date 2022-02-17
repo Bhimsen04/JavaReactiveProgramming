@@ -87,4 +87,21 @@ public class MonoTest {
                 subscription -> subscription.request(5));   // it will clear the resources
     }
 
+    @Test
+    public void monoDoOnMethods() {
+        String name = "Rajat Garg";
+        Mono<Object> mono = Mono.just(name)
+                //.log()
+                .map(String::toUpperCase)
+                .doOnSubscribe(subscription -> log.info("Subscribed"))     // when someone will subscribe ....  after onSubscribe
+                .doOnRequest(longNumber -> log.info("Request received, stating doing something..."))  // before request(unbounded)
+                .doOnNext(s -> log.info("value is here. Executing doOnNext {}", s)) // after request(unbounded) and onNext(Rajat Garg)
+                // .doOnNext(s -> log.info("value is here. Executing doOnNext {}", s)) // after request(unbounded) and onNext(Rajat Garg)
+                .flatMap(s -> Mono.empty())
+                .doOnNext(s -> log.info("value is here. Executing doOnNext {}", s)) // after request(unbounded) and onNext(Rajat Garg)
+                .doOnSuccess(s -> log.info("doOnSuccess executed {}" , s));
+        mono.subscribe(s -> log.info("name {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("Finished"));
+    }
 }
