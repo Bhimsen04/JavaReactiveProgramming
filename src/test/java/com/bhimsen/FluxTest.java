@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -142,6 +143,25 @@ public class FluxTest {
         interval.subscribe(i -> {
             log.info("Number {}", i);
         });
+        // if thread will not sleep, then no able to get the output bcz immediately main thread will exit
+        // so now main thread is sleeping for 500ms then we can able to see 5 elements(500/100), after that main thread will exit.
         Thread.sleep(500);
+    }
+
+    @Test
+    public void connectableFlux() throws InterruptedException {
+        ConnectableFlux<Integer> connectableFlux = Flux.range(1, 10)
+//                .log()
+                .delayElements(Duration.ofMillis(200))
+                .publish();
+        connectableFlux.connect();    // connected by daemon thread
+
+        log.info("Thread sleeping for 400ms");
+        Thread.sleep(400);    // able to see 2 elements here .. 400/200
+        connectableFlux.subscribe(i -> log.info("Sub1 number: {}", i));
+
+        log.info("Thread sleeping for 600ms");
+        Thread.sleep(600);    // able to see 3 elements here ... 600/200
+        connectableFlux.subscribe(i -> log.info("Sub2 number: {}", i));
     }
 }
