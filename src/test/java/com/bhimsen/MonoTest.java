@@ -9,6 +9,7 @@ import reactor.test.StepVerifier;
 @Slf4j
 public class MonoTest {
 
+    // mono: want to stream one or no elements
     @Test
     public void test() {
         log.info("Everything working as intended");
